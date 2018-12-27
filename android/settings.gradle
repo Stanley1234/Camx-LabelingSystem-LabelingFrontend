@@ -1,0 +1,3 @@
+rootProject.name = 'camx_labeling_frontent'
+
+include ':app'
