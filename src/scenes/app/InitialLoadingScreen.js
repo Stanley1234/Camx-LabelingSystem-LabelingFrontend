@@ -1,6 +1,6 @@
 import React, {Component} from "react"
 import * as ImageFetchUtils from "../../utils/ImageFetchUtils";
-import {IMAGE_DOWNLOAD_SIZE_SMALL} from "../../utils/Constants";
+import {IMAGE_DOWNLOAD_SIZE_SMALL, INITIAL_IMAGEBODIES} from "../../utils/Constants";
 import {ActivityIndicator, View} from "react-native";
 
 export class InitialLoadingScreen extends Component {
@@ -12,8 +12,9 @@ export class InitialLoadingScreen extends Component {
         const accept = (size, imageBodies) => {
             console.log(`pre-fetching ${size} images`);
 
-            // TODO: pass imageBodies to next scene
-            this.navigation.navigate('LABELING');
+            this.props.navigation.navigate('LABELING', {
+                [INITIAL_IMAGEBODIES]: imageBodies
+            });
         };
         ImageFetchUtils.downloadManyImages(IMAGE_DOWNLOAD_SIZE_SMALL, accept);
     }

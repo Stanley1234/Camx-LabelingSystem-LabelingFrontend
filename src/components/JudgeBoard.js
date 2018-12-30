@@ -1,6 +1,13 @@
 import React, {Component} from "react"
 import {Button, Text, View} from "react-native";
-import {IMAGE_QUALITY_BAD, IMAGE_QUALITY_GOOD, IMAGE_QUALITY_UNKNOWN} from "../utils/Constants";
+import {
+    IMAGE_QUALITY_BAD,
+    IMAGE_QUALITY_GOOD,
+    IMAGE_QUALITY_UNKNOWN,
+    INITIAL_IMAGEBODIES,
+    NAME,
+    QUALITY
+} from "../utils/Constants";
 import * as ImageFetchUtils from "../utils/ImageFetchUtils";
 import ImagePoolService from "./ImagePoolService";
 
@@ -13,6 +20,8 @@ class JudgeBoard extends Component {
             labeledNum: 0,
             unlabeledNum: 0
         };
+
+        console.debug("Judge board: " + this.props[INITIAL_IMAGEBODIES] );
 
         this.imagePoolService = React.createRef();
         this._downloadOneImages = this._downloadOneImages.bind(this);
@@ -49,8 +58,8 @@ class JudgeBoard extends Component {
 
     _labelImage(name, quality) {
         const imageMeta = {
-            name: name,
-            quality: quality
+            [NAME]: name,
+            [QUALITY]: quality
         };
         const accept = (msg) => {
             console.log(msg);
@@ -62,13 +71,18 @@ class JudgeBoard extends Component {
         // send request to server
         ImageFetchUtils.labelImage(imageMeta, accept, reject);
 
-        // download more image
+        // download one more image
         this._downloadOneImages();
 
         this.imagePoolService.current.nextImage();
     }
 
     render() {
+        let curImageName = this.imagePoolService.current.getCurImageName();
+        if (curImageName === null) {
+            curImageName = '';
+        }
+
         return (
             <View>
                 <View>
@@ -76,14 +90,16 @@ class JudgeBoard extends Component {
                     <Text>Still unlabeled: {this.state.unlabeledNum}</Text>
                 </View>
 
-                <ImagePoolService ref = {this.imagePoolService}/>
+                <ImagePoolService
+                    initialImageBodies = {this.props[INITIAL_IMAGEBODIES]}
+                    ref = {this.imagePoolService}
+                />
 
                 <View>
-                    <Button title='Good' onPress={() => this._labelImage(this.state.curImageName, IMAGE_QUALITY_GOOD)}/>
-                    <Button title='Bad' onPress={() => this._labelImage(this.state.curImageName, IMAGE_QUALITY_BAD)} />
-                    <Button title='Unknown' onPress={() => this._labelImage(this.state.curImageName, IMAGE_QUALITY_UNKNOWN)} />
+                    <Button title='Good' onPress={() => this._labelImage(curImageName, IMAGE_QUALITY_GOOD)}/>
+                    <Button title='Bad' onPress={() => this._labelImage(curImageName, IMAGE_QUALITY_BAD)} />
+                    <Button title='Unknown' onPress={() => this._labelImage(curImageName, IMAGE_QUALITY_UNKNOWN)} />
                 </View>
-
             </View>
         );
     }

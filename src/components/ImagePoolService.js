@@ -1,24 +1,45 @@
 import {Image, View} from "react-native";
-import React from "react";
-import {BASE64_ENCODED_IMAGE_PREFIX} from "../utils/Constants";
+import React, {Component} from "react"
+import {BUFFER, INITIAL_IMAGEBODIES, NAME} from "../utils/Constants";
+import * as UriUtils from "../utils/UriUtils";
 
 class ImagePoolService extends Component {
 
     constructor(props) {
         super(props);
 
+        const initialImageBodies = this.props[INITIAL_IMAGEBODIES];
+        const curImageBody = (initialImageBodies === null ? null : initialImageBodies[0]);
+
         this.state = {
-            imageBodies: [],
-            curImageName: null,
-            curImageBuffer: null
+            imageBodies: initialImageBodies,
+            curImageBody: curImageBody
         };
+    }
+
+    getCurImageName() {
+        if (this.state.curImageBody === null) {
+            return null;
+        }
+        return this.state.curImageBody[NAME];
     }
 
     /**
      * Render the next image if available.
      * */
     nextImage() {
-        // TODO: drop the first image of the current buffer
+        // drop the first image
+        let stateCopy = this.state;
+        stateCopy.imageBodies = stateCopy.imageBodies.shift();
+
+        if (stateCopy.imageBodies.length === 0) {
+            stateCopy.curImageBody = null;
+        } else {
+            stateCopy.curImageBody = stateCopy.imageBodies[0];
+        }
+
+        // cause the component to refresh
+        this.setState(stateCopy);
     }
 
     /**
@@ -27,15 +48,17 @@ class ImagePoolService extends Component {
      *        two fields, namely 'name' and 'encodedImage'
      * */
     addImage(images) {
-        // TODO: add to the end of the list
-
+        let stateCopy = this.state;
+        stateCopy.imageBodies = stateCopy.imageBodies.concat(images);
+        this.setState(stateCopy);
     }
 
     render() {
+        const prefix = UriUtils.generateBase64ImagePrefix(this.state.curImageBody[NAME]);
         return (
             <View>
                 <Image
-                    source = {`${BASE64_ENCODED_IMAGE_PREFIX}${this.state.curImageBuffer}`}
+                    source = {`${prefix}${this.state.curImageBody[BUFFER]}`}
                 />
             </View>
         );
