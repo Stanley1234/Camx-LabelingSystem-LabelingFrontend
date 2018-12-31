@@ -1,19 +1,27 @@
 import {InitialLoadingScreen} from "./InitialLoadingScreen";
 import LabelingScreen from "./LabelingScreen";
-import {createSwitchNavigator} from "react-navigation";
+import {createAppContainer, createSwitchNavigator} from "react-navigation";
+import {FINISH_SCREEN, INITIAL_SCREEN, LABELING_SCREEN} from "../../utils/Constants";
+import FinishScene from "./FinishScene";
+
 
 const ROUTE_CONFIG = {
-    INITIAL: {
+    [INITIAL_SCREEN]: {
         screen: InitialLoadingScreen
     },
-    LABELING: {
+    [LABELING_SCREEN]: {
         screen: LabelingScreen
+    },
+    [FINISH_SCREEN]: {
+        screen: FinishScene
     }
 };
 
 const SWITCH_NAVIGATOR_CONFIG = {
-    initialRouteName: "Initial"
+    initialRouteName: INITIAL_SCREEN
 };
 
-export default createSwitchNavigator(ROUTE_CONFIG, SWITCH_NAVIGATOR_CONFIG);
+const switchNavigator = createSwitchNavigator(ROUTE_CONFIG, SWITCH_NAVIGATOR_CONFIG);
+
+export default createAppContainer(switchNavigator);
 

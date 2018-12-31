@@ -4,7 +4,7 @@ import {
     COUNT_UNLABELED_METHOD,
     COUNT_UNLABELED_URI, DOWNLOAD_MANY_METHOD,
     DOWNLOAD_METHOD,
-    DOWNLOAD_URI, ERROR, IMAGES, LABELING_METHOD, MESSAGE, NAME, NUMBER, QUALITY
+    DOWNLOAD_URI, ERROR, IMAGE, IMAGES, LABELING_METHOD, MESSAGE, NAME, NUMBER, QUALITY
 } from "./Constants";
 import * as URIUtils from "./UriUtils";
 
@@ -19,14 +19,13 @@ import * as URIUtils from "./UriUtils";
  *        Note that only one of err1 and err2 will be non-null, i.e. if being rejected
  *        when fetching count of unlabeled, then err2 will be null.
  * */
-export async function fetchCountOfLabeledAndUnlabeled(accept, reject) {
+export async function fetchCountOfLabeledAndUnlabeled(accept, reject = null) {
     let unlabeledResJson, labeledResJson;
 
     // fetch unlabeled count
     try {
         const unlabeledResponse = await fetch(COUNT_UNLABELED_URI, {method: COUNT_UNLABELED_METHOD});
         unlabeledResJson = await unlabeledResponse.json();
-
         if (unlabeledResponse.status !== 200) {
             // fatal unknown error
             if (reject !== null) {
@@ -45,8 +44,7 @@ export async function fetchCountOfLabeledAndUnlabeled(accept, reject) {
     try {
         const labeledResponse = await fetch(COUNT_LABELED_URI, {method: COUNT_LABELED_METHOD});
         labeledResJson = await labeledResponse.json();
-
-        if (labeledResJson.status !== 200) {
+        if (labeledResponse.status !== 200) {
             // fatal unknown error
             if (reject !== null) {
                 reject(null, labeledResJson[ERROR]);
@@ -60,18 +58,18 @@ export async function fetchCountOfLabeledAndUnlabeled(accept, reject) {
         }
         return;
     }
-
     accept(unlabeledResJson[NUMBER], labeledResJson[NUMBER]);
 }
 
 /**
  * Download one image from server
  * @param accept
- *        Callback that accepts one parameter.
+ *        Callback that accepts one parameter. The parameter contains the
+ *        image body from the server
  * @param reject
  *
  * */
-export async function downloadOneImage(accept, reject) {
+export async function downloadOneImage(accept, reject = null) {
     try {
         const downloadResponse = await fetch(DOWNLOAD_URI, {method: DOWNLOAD_METHOD});
         const downloadResJson = await downloadResponse.json();
@@ -82,8 +80,7 @@ export async function downloadOneImage(accept, reject) {
             }
             return;
         }
-
-        accept(downloadResJson);
+        accept(downloadResJson[IMAGE]);
 
     } catch (e) {
         if (reject !== null) {
@@ -103,25 +100,27 @@ export async function downloadOneImage(accept, reject) {
  * @param reject
  *        Callback that accepts one parameter
  * */
-export async function downloadManyImages(size, accept, reject) {
+export async function downloadManyImages(size, accept, reject = null) {
     const uri = URIUtils.generateDownloadManyUri(size);
     try {
         const response = await fetch(uri, {
-            method: DOWNLOAD_MANY_METHOD
+            method: DOWNLOAD_MANY_METHOD,
+            'content-type': 'application/json'
         });
-        const responseJson = await response.json();
 
-        if (responseJson.status !== 200) {
+        const responseJson = await response.json();
+        if (response.status !== 200) {
             if (reject !== null) {
                 reject(responseJson[ERROR]);
             }
+            return;
         }
-
         accept(responseJson[IMAGES].length, responseJson[IMAGES]);
     } catch (e) {
         if (reject !== null) {
             reject(e);
         }
+        console.error(e);
     }
 }
 
@@ -136,7 +135,7 @@ export async function downloadManyImages(size, accept, reject) {
  * @param reject
  *
  * */
-export async function labelImage(imageMeta, accept, reject) {
+export async function labelImage(imageMeta, accept, reject = null) {
     const name = imageMeta[NAME];
     const quality = imageMeta[QUALITY];
 
@@ -147,7 +146,9 @@ export async function labelImage(imageMeta, accept, reject) {
             throw new Error(`Illegal argument: ${name}, ${quality}`);
         }
     } catch (e) {
-        reject(e);
+        if (reject !== null) {
+            reject(e);
+        }
         return;
     }
 
@@ -163,7 +164,6 @@ export async function labelImage(imageMeta, accept, reject) {
             }
             return;
         }
-
         accept(labelResJson[MESSAGE]);
     } catch (e) {
         if (reject !== null) {

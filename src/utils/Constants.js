@@ -1,5 +1,5 @@
 export const PROTOCOL = "http";
-export const SERVER_IP = "172.20.144.244";
+export const SERVER_IP = "172.20.145.230";
 export const SERVER_PORT = "8080";
 export const SERVER_ADDR = `${PROTOCOL}://${SERVER_IP}:${SERVER_PORT}`;
 
@@ -18,6 +18,7 @@ export const IMAGE_QUALITY_BAD = "BAD";
 export const IMAGE_QUALITY_UNKNOWN = "UNKNOWN";
 
 export const IMAGE_DOWNLOAD_SIZE_SMALL = 25;
+export const IMAGE_CACHED_THRESHOLD = 20;
 
 // Server-client interface names
 export const NAME = "name";
@@ -25,8 +26,15 @@ export const BUFFER = "encodedImage";
 export const QUALITY = "quality";
 export const ERROR = "error";
 export const IMAGES = "images";
+export const IMAGE = "image";
 export const MESSAGE = "message";
 export const NUMBER = "number";
 
 // Props name between two components
 export const INITIAL_IMAGEBODIES = "initialImageBodies";
+
+
+// Screen names
+export const INITIAL_SCREEN = "initial";
+export const LABELING_SCREEN = "labeling";
+export const FINISH_SCREEN = "finish";

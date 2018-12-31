@@ -1,6 +1,6 @@
 import React, {Component} from "react"
 import * as ImageFetchUtils from "../../utils/ImageFetchUtils";
-import {IMAGE_DOWNLOAD_SIZE_SMALL, INITIAL_IMAGEBODIES} from "../../utils/Constants";
+import {FINISH_SCREEN, IMAGE_DOWNLOAD_SIZE_SMALL, INITIAL_IMAGEBODIES, LABELING_SCREEN} from "../../utils/Constants";
 import {ActivityIndicator, View} from "react-native";
 
 export class InitialLoadingScreen extends Component {
@@ -10,17 +10,23 @@ export class InitialLoadingScreen extends Component {
 
     _prefetchImages() {
         const accept = (size, imageBodies) => {
-            console.log(`pre-fetching ${size} images`);
+            console.log(`Initially load ${size} images`);
 
-            this.props.navigation.navigate('LABELING', {
+            this.props.navigation.navigate(LABELING_SCREEN, {
                 [INITIAL_IMAGEBODIES]: imageBodies
             });
         };
-        ImageFetchUtils.downloadManyImages(IMAGE_DOWNLOAD_SIZE_SMALL, accept);
+
+        const reject = () => {
+            console.log("No image available");
+            this.props.navigation.navigate(FINISH_SCREEN);
+        };
+
+        ImageFetchUtils.downloadManyImages(IMAGE_DOWNLOAD_SIZE_SMALL, accept, reject);
     }
 
     componentDidMount() {
-        // prefetch images from server
+        // prefetch images from the server
         this._prefetchImages();
     }
 
