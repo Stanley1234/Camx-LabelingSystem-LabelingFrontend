@@ -20,19 +20,23 @@ class JudgeBoard extends Component {
             labeledNum: 0,
             unlabeledNum: 0,
             onLabeling: false,
-            fetchingSubscriptions: []
         };
 
         this.imagePool = React.createRef();
         this._labelImage = this._labelImage.bind(this);
+        this.mounted = true;
+
+        console.log("Calling constructor JudgeBoard completes");
     }
 
     _fetchCount() {
+        console.log("Method - _fetchCount");
+
         // noinspection ES6BindWithArrowFunction
         const accept = ((unlabeledCount, labeledCount) => {
             console.log(`Fetch count: ${unlabeledCount}, ${labeledCount}`);
 
-            let stateCopy = this.state;
+            let stateCopy = Object.assign({}, this.state);
             stateCopy.labeledNum = labeledCount;
             stateCopy.unlabeledNum = unlabeledCount;
             this.setState(stateCopy);
@@ -49,21 +53,20 @@ class JudgeBoard extends Component {
     }
 
     async _fetchImages(size) {
+        console.log("Method - _fetchImage");
+
         const accept = (size, imageBodies) => {
+            console.log(`this.mounted=${this.mounted}`);
+            if (this.mounted !== true) {
+                return;
+            }
             console.log(`Method _fetchImages. Fetch size: ${size}`);
             console.log(`Method _fetchImages. Cached size: ${this.imagePool.current.getNumOfCachedImages()}`);
-
-            console.log(`All images in local`);
-            imageBodies.forEach((b) => console.log(b.name));
 
             this.imagePool.current.addImage(imageBodies);
         };
 
         await ImageFetchUtils.downloadManyImages(size, accept);
-    }
-
-    _addSubscription(promise) {
-        this.state.fetchingSubscriptions.push(promise);
     }
 
     _timeToFetch() {
@@ -73,21 +76,23 @@ class JudgeBoard extends Component {
     }
 
     _setOnLabeling(onLabeling) {
-        let stateCopy = this.state;
+        let stateCopy = Object.assign({}, this.state);
         stateCopy.onLabeling = onLabeling;
         this.setState(stateCopy);
     }
 
-    _timeToFinish() {
+    async _timeToFinish() {
         // there are two situations to make this happen.
         // 1. there are no images available in local
         // 2. there are no images available on server
         // we only check for case 2 in this case
         // TODO: check case 1
-        return this.imagePool.current.nextImage() === false;
+        return await this.imagePool.current.nextImage() === false;
     }
 
     async _labelImage(name, quality) {
+        console.log("Method - _labelImage");
+
         const imageMeta = {
             [NAME]: name,
             [QUALITY]: quality
@@ -95,15 +100,7 @@ class JudgeBoard extends Component {
 
         // noinspection ES6BindWithArrowFunction
         const accept = ((msg) => {
-            console.log(`Success message: ${msg}`);
-
-            // update the count
-            this._fetchCount();
-
-            // download more images once an image is labeled
-            if (this._timeToFetch()) {
-                this._addSubscription(this._fetchImages(5));
-            }
+            console.log(`Labeling succeeds: ${msg}`);
         }).bind(this);
 
         const reject = (err) => {
@@ -117,8 +114,22 @@ class JudgeBoard extends Component {
         // send request to server to label the image
         await ImageFetchUtils.labelImage(imageMeta, accept, reject);
 
+        // update the count
+        this._fetchCount();
+
+        // download more images once an image is labeled
+        if (this._timeToFetch()) {
+            const diff = this.state.unlabeledNum - this.imagePool.current.getNumOfCachedImages();
+
+            if (diff >= 10 || this.state.unlabeledNum <= 15) {
+                this._fetchImages(15);
+            } else {
+                this._fetchImages(5);
+            }
+        }
+
         // check if there are no unlabeled images to be fetched from servers
-        if (this._timeToFinish()) {
+        if (await this._timeToFinish()) {
             console.log("Ready to switch to finishing screen");
             this.props.navigation.navigate(FINISH_SCREEN);
         }
@@ -127,16 +138,18 @@ class JudgeBoard extends Component {
     }
 
     componentWillUnmount() {
-        // cancel all subscriptions
-        /*for (const promise in this.state.fetchingSubscriptions) {
-            promise.cancel();
-        }*/
+        console.log("Component will unmount");
+        this.mounted = false;
     }
 
     componentDidMount() {
+        this._setOnLabeling(true);
+
         // when the component is first mounted,
         // it has image bodies passed in
         this._fetchCount();
+
+        this._setOnLabeling(false);
     }
 
     render() {

@@ -2,6 +2,7 @@ import {Image, View} from "react-native";
 import React, {Component} from "react"
 import {BUFFER, INITIAL_IMAGEBODIES, NAME} from "../utils/Constants";
 import * as UriUtils from "../utils/UriUtils";
+import Semaphore from "semaphore-async-await"
 
 class ImagePool extends Component {
 
@@ -12,13 +13,18 @@ class ImagePool extends Component {
         const curImageBody = (initialImageBodies === null ? null : initialImageBodies[0]);
 
         this.state = {
-            imageBodies: initialImageBodies,
             curImageBody: curImageBody,
         };
+
+        this.availImages = initialImageBodies;
+        this.removedImages = new Set();
+        this.mutex = new Semaphore(1);
+
+        console.log("Calling constructor ImagePool completes");
     }
 
     getNumOfCachedImages() {
-        return this.state.imageBodies.length;
+        return this.availImages.length;
     }
 
 
@@ -33,34 +39,43 @@ class ImagePool extends Component {
      * Render the next image if available. Return true if there is an image available.
      * Return false if there are no images available.
      * */
-    nextImage() {
+    async nextImage() {
+        console.log("Method - nextImage");
+
+        await this.mutex.acquire();
+        console.log("nextImage - take lock");
+
         const cachedNum = this.getNumOfCachedImages();
 
+        const removed = this.availImages.shift();
+        this.removedImages.add(removed[NAME]);
+
         // TODO: remove debug
-        this.state.imageBodies.forEach((image) => console.log(image.name));
+        //console.log(`====== ${cachedNum} Image stored in local =====`);
+        //this.availImages.forEach((image) => console.log(image.name));
+        //console.log("==================================");
 
         if (cachedNum === 0) {
+            this.mutex.release();
             return false;
         }
 
-        let stateCopy = this.state;
-        stateCopy.imageBodies.shift();
+        // update the state
+        let stateCopy = Object.assign({}, this.state);
+        let ret;
 
         if (cachedNum === 1) {
-
             stateCopy.curImageBody = null;
-            this.setState(stateCopy);
-
-            return false;
-
+            ret = false;
         } else {
-
-            stateCopy.curImageBody = stateCopy.imageBodies[0];
-            // cause the component to refresh
-            this.setState(stateCopy);
-
-            return true;
+            stateCopy.curImageBody = this.availImages[0];
+            ret = true;
         }
+
+        // cause the component to refresh
+        this.setState(stateCopy);
+        this.mutex.release();
+        return ret;
 
     }
 
@@ -69,21 +84,27 @@ class ImagePool extends Component {
      *        List of images to be added. Each image is an object that must have
      *        two fields, namely 'name' and 'encodedImage'
      * */
-    addImage(images) {
+    async addImage(images) {
+        console.log("Method - addImage");
+
+        await this.mutex.acquire();
+        console.log("addImage - take lock");
 
         // filter duplicates
         images.forEach((newImage) => {
             let exist = false;
-            this.state.imageBodies.forEach((oldImage) => {
+            this.availImages.forEach((oldImage) => {
                  if (newImage[NAME] === oldImage[NAME]) {
                      exist = true;
                  }
             });
-            if (!exist) {
+            if (!exist && !this.removedImages.has(newImage[NAME])) {
                 // add images
-                this.state.imageBodies.push(newImage);
+                console.log(`Add image: ${newImage[NAME]}`);
+                this.availImages.push(newImage);
             }
         });
+        this.mutex.release();
     }
 
     render() {

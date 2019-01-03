@@ -1,6 +1,6 @@
 import React, {Component} from "react"
 import * as ImageFetchUtils from "../../utils/ImageFetchUtils";
-import {FINISH_SCREEN, IMAGE_DOWNLOAD_SIZE_SMALL, INITIAL_IMAGEBODIES, LABELING_SCREEN} from "../../utils/Constants";
+import {FINISH_SCREEN, IMAGE_INITIAL_DOWNLOAD_SIZE, INITIAL_IMAGEBODIES, LABELING_SCREEN} from "../../utils/Constants";
 import {ActivityIndicator, View} from "react-native";
 
 export class InitialLoadingScreen extends Component {
@@ -22,7 +22,7 @@ export class InitialLoadingScreen extends Component {
             this.props.navigation.navigate(FINISH_SCREEN);
         };
 
-        ImageFetchUtils.downloadManyImages(IMAGE_DOWNLOAD_SIZE_SMALL, accept, reject);
+        ImageFetchUtils.downloadManyImages(IMAGE_INITIAL_DOWNLOAD_SIZE, accept, reject);
     }
 
     componentDidMount() {

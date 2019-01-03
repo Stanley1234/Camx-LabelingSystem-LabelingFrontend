@@ -1,5 +1,5 @@
 export const PROTOCOL = "http";
-export const SERVER_IP = "172.20.145.230";
+export const SERVER_IP = "192.168.1.177";
 export const SERVER_PORT = "8080";
 export const SERVER_ADDR = `${PROTOCOL}://${SERVER_IP}:${SERVER_PORT}`;
 
@@ -17,8 +17,8 @@ export const IMAGE_QUALITY_GOOD = "GOOD";
 export const IMAGE_QUALITY_BAD = "BAD";
 export const IMAGE_QUALITY_UNKNOWN = "UNKNOWN";
 
-export const IMAGE_DOWNLOAD_SIZE_SMALL = 25;
-export const IMAGE_CACHED_THRESHOLD = 20;
+export const IMAGE_INITIAL_DOWNLOAD_SIZE = 25;
+export const IMAGE_CACHED_THRESHOLD = 90;
 
 // Server-client interface names
 export const NAME = "name";
