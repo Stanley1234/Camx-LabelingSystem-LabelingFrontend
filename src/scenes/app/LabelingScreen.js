@@ -1,6 +1,6 @@
 import React, {Component} from "react"
 import JudgeBoard from "../../components/JudgeBoard";
-import {INITIAL_IMAGEBODIES} from "../../utils/Constants";
+import {View} from "react-native";
 
 export default class LabelingScreen extends Component {
     constructor(props) {
@@ -9,10 +9,13 @@ export default class LabelingScreen extends Component {
 
     render() {
         return (
-           <JudgeBoard
-               initialImageBodies = {this.props.navigation.state.params[INITIAL_IMAGEBODIES]}
-               navigation = {this.props.navigation}
-           />
+            <View>
+               <JudgeBoard
+                   initialImageBodies = {this.props.navigation.state.params.initialImageBodies}
+                   initialNameList = {this.props.navigation.state.params.initialNameList}
+                   navigation = {this.props.navigation}
+               />
+            </View>
         )
     }
 }

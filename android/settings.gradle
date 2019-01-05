@@ -1,3 +1,5 @@
 rootProject.name = 'camx_labeling_frontent'
+include ':realm'
+project(':realm').projectDir = new File(rootProject.projectDir, '../node_modules/realm/android')
 
 include ':app'

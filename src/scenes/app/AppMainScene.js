@@ -1,8 +1,8 @@
 import {InitialLoadingScreen} from "./InitialLoadingScreen";
 import LabelingScreen from "./LabelingScreen";
 import {createAppContainer, createSwitchNavigator} from "react-navigation";
-import {FINISH_SCREEN, INITIAL_SCREEN, LABELING_SCREEN} from "../../utils/Constants";
 import FinishScene from "./FinishScene";
+import {FINISH_SCREEN, INITIAL_SCREEN, LABELING_SCREEN} from "../../configs/Route";
 
 
 const ROUTE_CONFIG = {
