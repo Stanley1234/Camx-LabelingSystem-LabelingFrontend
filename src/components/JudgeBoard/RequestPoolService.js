@@ -1,6 +1,7 @@
 import queueFactory from 'react-native-queue';
 import * as ImageFetchUtils from "../../libs/ImageFetchUtils";
 import Semaphore from "semaphore-async-await"
+import * as ImagePool from "./ImagePoolService";
 
 const LABELING_WORKER = "labeling";
 const FETCHING_WORKER = "fetching";
@@ -16,7 +17,6 @@ let queue = null;
 let initialized = false;
 
 let context = {
-    imageSlide: null,
     labelingJobs: 0,
     fetchingJobs: 0,
     fetchingSem: new Semaphore(0),
@@ -39,7 +39,7 @@ async function _fetch(names) {
     const accept = async (imageBodies) => {
         console.log(`Fetching ${imageBodies.length} images`);
 
-        context.imageSlide.current.addImage(imageBodies);
+        ImagePool.addImage(imageBodies);
     };
 
     const reject = (err) => {
@@ -52,9 +52,7 @@ async function _fetch(names) {
     context.fetchingJobs --;
 }
 
-export async function initWorkers(imageSlideRef) {
-    context.imageSlide = imageSlideRef;
-
+export async function initWorkers() {
     if (initialized) {
         return;
     }
@@ -75,7 +73,7 @@ export async function initWorkers(imageSlideRef) {
 
     initialized = true;
 
-    console.log("Workers initialization completes");
+    console.log("RequestPoolService initialization completes");
 }
 
 export function addLabelingJobs(imageMeta) {

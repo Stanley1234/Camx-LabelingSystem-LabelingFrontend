@@ -3,9 +3,10 @@ import {ActivityIndicator, Button, Text, View} from "react-native";
 import ImageSlide from "./ImageSlide";
 import {IMAGE_QUALITY_BAD, IMAGE_QUALITY_GOOD, IMAGE_QUALITY_UNKNOWN} from "../../configs/ImageQuality";
 import {NAME, QUALITY} from "../../configs/Field";
-import * as Workers from "./Workers";
+import * as RequestPoolService from "./RequestPoolService";
 import {IMAGES_DOWNLOAD_SIZE, MAXIMUM_CACHED_NUM} from "../../configs/Fetch";
 import {FINISH_SCREEN} from "../../configs/Route";
+import * as ImagePoolService from "./ImagePoolService";
 
 class JudgeBoard extends Component {
 
@@ -22,9 +23,11 @@ class JudgeBoard extends Component {
 
         this.navigation = this.props.navigation;
         this.nameList = this.props.initialNameList;
-        this.imageSlide = React.createRef();
 
         this._startLabelImage = this._startLabelImage.bind(this);
+
+        ImagePoolService.initializeImagePool(this.props.initialImageBodies);
+        RequestPoolService.initWorkers();
 
         console.log("Calling constructor JudgeBoard completes");
     }
@@ -45,11 +48,11 @@ class JudgeBoard extends Component {
 
         this.nameList = this.nameList.slice(actualRequestSize);
 
-        Workers.addFetchingJobs(names, this.imageSlide);
+        RequestPoolService.addFetchingJobs(names);
     }
 
     _timeToFetch() {
-        const cachedNum = this.imageSlide.current.getNumOfCachedImages();
+        const cachedNum = ImagePoolService.getNumOfCachedImages();
 
         if (cachedNum >= MAXIMUM_CACHED_NUM) {
             return false;
@@ -57,28 +60,28 @@ class JudgeBoard extends Component {
         return this.nameList.length > 0;
     }
 
-    _timeToFinish() {
-        return this.imageSlide.current.getNumOfCachedImages() === 0
-            && !Workers.hasFetchingJobsProcessing();
+    static _timeToFinish() {
+        return ImagePoolService.getNumOfCachedImages() === 0
+            && !RequestPoolService.hasFetchingJobsProcessing();
     }
 
     async _waitUntilImageCached() {
-        const cachedNum = this.imageSlide.current.getNumOfCachedImages();
+        const cachedNum = ImagePoolService.getNumOfCachedImages();
         if (cachedNum > 1) {
             return;
         }
-        if (!Workers.hasFetchingJobsProcessing()) {
+        if (!RequestPoolService.hasFetchingJobsProcessing()) {
             return;
         }
 
         this.setState({fetching: true});
-        await Workers.waitOnFetchingEvent();
+        await RequestPoolService.waitOnFetchingEvent();
         this.setState({fetching: false});
     }
 
     async _waitUntilLabelingFinish() {
         this.setState({submittingLabeling: true});
-        await Workers.waitOnLabelingEvents();
+        await RequestPoolService.waitOnLabelingEvents();
     }
 
     async _startLabelImage(name, quality) {
@@ -93,7 +96,7 @@ class JudgeBoard extends Component {
 
         this._updateCount();
 
-        Workers.addLabelingJobs(imageMeta);
+        RequestPoolService.addLabelingJobs(imageMeta);
 
         if (this._timeToFetch()) {
             this._startFetchingImage();
@@ -102,9 +105,9 @@ class JudgeBoard extends Component {
         await this._waitUntilImageCached();
 
         // display next image
-        this.imageSlide.current.nextImage();
+        ImagePoolService.nextImage();
 
-        if (this._timeToFinish()) {
+        if (JudgeBoard._timeToFinish()) {
             // wait until all labeling requests finished
             await this._waitUntilLabelingFinish();
             this.navigation.navigate(FINISH_SCREEN);
@@ -112,10 +115,6 @@ class JudgeBoard extends Component {
         }
 
         this.setState({disabled: false});
-    }
-
-    componentDidMount() {
-        Workers.initWorkers(this.imageSlide);
     }
 
     render() {
@@ -126,10 +125,7 @@ class JudgeBoard extends Component {
                     <Text>Still unlabeled: {this.state.unlabeledNum}</Text>
                 </View>
 
-                <ImageSlide
-                    initialImageBodies = {this.props.initialImageBodies}
-                    ref = {this.imageSlide}
-                />
+                <ImageSlide/>
 
                 {   this.state.fetching &&
                     <View>
@@ -147,17 +143,17 @@ class JudgeBoard extends Component {
                     <View style={{margin: 20}}>
                         <Button title='Good'
                                 disabled={this.state.disabled}
-                                onPress={() => this._startLabelImage(this.imageSlide.current.getCurImageName(), IMAGE_QUALITY_GOOD)}/>
+                                onPress={() => this._startLabelImage(ImagePoolService.getCurImageName(), IMAGE_QUALITY_GOOD)}/>
                     </View>
                     <View style={{margin: 20}}>
                         <Button title='Bad'
                                 disabled={this.state.disabled}
-                                onPress={() => this._startLabelImage(this.imageSlide.current.getCurImageName(), IMAGE_QUALITY_BAD)} />
+                                onPress={() => this._startLabelImage(ImagePoolService.getCurImageName(), IMAGE_QUALITY_BAD)} />
                     </View>
                     <View style={{margin: 20}}>
                         <Button title='Unknown'
                                 disabled={this.state.disabled}
-                                onPress={() => this._startLabelImage(this.imageSlide.current.getCurImageName(), IMAGE_QUALITY_UNKNOWN)} />
+                                onPress={() => this._startLabelImage(ImagePoolService.getCurImageName(), IMAGE_QUALITY_UNKNOWN)} />
                     </View>
                 </View>
             </View>
