@@ -8,8 +8,12 @@ export function generateDownloadManyUri(size) {
     return `${SERVER_ADDR}/download/${size}`;
 }
 
-export function generateFetchNameListUri(size) {
+export function generateFetchNameListUriWithSize(size) {
     return `${SERVER_ADDR}/download/namelist/${size}`;
+}
+
+export function generateFetchNameListUriWithRange(start, end) {
+    return `${SERVER_ADDR}/download/namelist?start=${start}&end=${end}`;
 }
 
 export function generateBase64ImagePrefix(name) {

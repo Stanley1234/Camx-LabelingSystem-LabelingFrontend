@@ -1,11 +1,20 @@
 import * as URIUtils from "./UriUtils";
-import {generateFetchNameListUri} from "./UriUtils";
+import {
+    generateFetchNameListUriWithRange,
+    generateFetchNameListUriWithSize
+} from "./UriUtils";
 import {
     COUNT_LABELED_METHOD,
     COUNT_LABELED_URI,
     COUNT_UNLABELED_METHOD,
-    COUNT_UNLABELED_URI, DOWNLOAD_MANY_METHOD, DOWNLOADONE_METHOD, DOWNLOADONE_URI, FETCH_METHOD,
-    FETCH_NAMELIST_METHOD, FETCH_URI, LABELING_METHOD
+    COUNT_UNLABELED_URI,
+    DOWNLOAD_MANY_METHOD,
+    DOWNLOADONE_METHOD,
+    DOWNLOADONE_URI,
+    FETCH_METHOD,
+    FETCH_NAMELIST_METHOD,
+    FETCH_URI,
+    LABELING_METHOD
 } from "../configs/Servers";
 import {ERROR, IMAGE, IMAGES, MESSAGE, NAME, NAMES, NUMBER, QUALITY} from "../configs/Field";
 
@@ -176,7 +185,8 @@ export async function labelImage(imageMeta, accept, reject = null) {
 }
 
 
-export async function fetchNames(size, accept, reject = null) {
+// noinspection JSUnusedGlobalSymbols
+export async function fetchNamesWithSize(size, accept, reject = null) {
     try {
         if (size === null || accept === null || size === undefined
             || accept === undefined) {
@@ -190,7 +200,32 @@ export async function fetchNames(size, accept, reject = null) {
         return;
     }
 
-    const fetchNameListUri = generateFetchNameListUri(size);
+    const fetchNameListUri = generateFetchNameListUriWithSize(size);
+    try {
+        const response = await fetch(fetchNameListUri, {
+            method: FETCH_NAMELIST_METHOD,
+        });
+        const responseJson = await response.json();
+
+        if (response.status !== 200) {
+            if (reject !== null) {
+                reject(responseJson[ERROR]);
+            }
+            return;
+        }
+
+        accept(responseJson[NAMES]);
+    } catch (e) {
+        if (reject !== null) {
+            reject(e);
+        }
+    }
+}
+
+export async function fetchNamesWithRange(start, end, accept, reject = null) {
+    // TODO: check illegal argument
+
+    const fetchNameListUri = generateFetchNameListUriWithRange(start, end);
     try {
         const response = await fetch(fetchNameListUri, {
             method: FETCH_NAMELIST_METHOD,

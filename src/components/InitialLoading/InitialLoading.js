@@ -1,8 +1,8 @@
 import React, {Component} from "react"
-import {FETCH_NAMES_SIZE, INITIAL_IMAGES_DOWNLOAD_SIZE} from "../../configs/Fetch";
+import {DEFAULT_NAMELIST_END, DEFAULT_NAMELIST_START, INITIAL_IMAGES_DOWNLOAD_SIZE} from "../../configs/Fetch";
 import * as ImageFetchUtils from "../../libs/ImageFetchUtils";
 import {FINISH_SCREEN, LABELING_SCREEN} from "../../configs/Route";
-import {ActivityIndicator, Text, View} from "react-native";
+import {ActivityIndicator, Button, Text, TextInput, View} from "react-native";
 
 export default class InitialLoading extends Component {
 
@@ -14,14 +14,13 @@ export default class InitialLoading extends Component {
         this.navigation = this.props.navigation;
 
         this.state = {
-            steps: 0,
+            start: DEFAULT_NAMELIST_START,
+            end: DEFAULT_NAMELIST_END,
+            alert: false,
+            fetching: false
         };
-    }
 
-    _increaseSteps(percent) {
-        let stateCopy = Object.assign({}, this.state);
-        stateCopy.steps += percent;
-        this.setState(stateCopy);
+        this._startLabeling = this._startLabeling.bind(this);
     }
 
     async _prefetchNames() {
@@ -35,7 +34,7 @@ export default class InitialLoading extends Component {
             console.log(msg);
         };
 
-        await ImageFetchUtils.fetchNames(FETCH_NAMES_SIZE, accept, reject);
+        await ImageFetchUtils.fetchNamesWithRange(this.state.start, this.state.end, accept, reject);
     }
 
     async _prefetchImages() {
@@ -70,12 +69,22 @@ export default class InitialLoading extends Component {
             return;
         }
 
-        this._increaseSteps(0.1);
-
         await this._prefetchImages();
+    }
 
-        // TODO: make it as an animation
-        this._increaseSteps(0.9);
+    _isIllegalArgs() {
+        return this.state.end < this.state.start
+        || this.state.end < 0 || this.state.start < 0;
+    }
+
+    async _startLabeling() {
+        if (this._isIllegalArgs()) {
+            this.setState({alert: true});
+            return;
+        }
+        this.setState({alert: false, fetching: true});
+
+        await this._prefetch();
 
         this.navigation.navigate(LABELING_SCREEN, {
             initialImageBodies: this.imagesBodiesList,
@@ -83,15 +92,54 @@ export default class InitialLoading extends Component {
         });
     }
 
-    componentDidMount() {
-        this._prefetch();
+    _setStart(text) {
+        const num = Number.parseInt(text);
+        this.setState({start: num});
+    }
+
+    _setEnd(text) {
+        const num = Number.parseInt(text);
+        this.setState({end: num});
     }
 
     render() {
         return (
-            <View>
-                <Text>Pre-fetching images from server</Text>
-                <ActivityIndicator/>
+            <View style={{padding: 10}}>
+                <View>
+                    <Text>Start:</Text>
+                    <TextInput
+                        onChangeText={(text) => this._setStart(text)}
+                        value={`${this.state.start}`}
+                    />
+                </View>
+
+                <View>
+                    <Text>End:</Text>
+                    <TextInput
+                        onChangeText={(text) => this._setEnd(text)}
+                        value={`${this.state.end}`}
+                    />
+                </View>
+
+                <View>
+                    <Button
+                        title="Start"
+                        disabled={this.state.fetching}
+                        onPress={this._startLabeling}>
+                    </Button>
+                </View>
+
+                {
+                    this.state.alert &&
+                    <Text style={{color: 'red'}}>Illegal arguments for start and end</Text>
+                }
+
+                {   this.state.fetching &&
+                    <View>
+                        <Text>Pre-fetching images from server</Text>
+                        <ActivityIndicator/>
+                    </View>
+                }
             </View>
         );
     }
