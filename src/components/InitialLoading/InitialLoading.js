@@ -31,6 +31,8 @@ export default class InitialLoading extends Component {
         };
 
         const reject = (msg) => {
+            this.namesList = [];
+
             console.log(msg);
         };
 
@@ -64,12 +66,15 @@ export default class InitialLoading extends Component {
 
         await this._prefetchNames();
 
+        console.log(`${this.namesList.length}`);
+
         if (this.namesList.length === 0) {
             this.navigation.navigate(FINISH_SCREEN);
-            return;
+            return false;
         }
 
         await this._prefetchImages();
+        return true;
     }
 
     _isIllegalArgs() {
@@ -84,7 +89,9 @@ export default class InitialLoading extends Component {
         }
         this.setState({alert: false, fetching: true});
 
-        await this._prefetch();
+        if (!await this._prefetch()) {
+           return;
+        }
 
         this.navigation.navigate(LABELING_SCREEN, {
             initialImageBodies: this.imagesBodiesList,
